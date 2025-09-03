@@ -87,7 +87,9 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int) (*Post, error)
 func (r *Repository) GetCommentByID(ctx context.Context, commentID int) (*Comment, error) {
 	var comment Comment
 
-	err := r.db.QueryRow(ctx, "SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE user_id = $1", commentID).Scan(&comment.userID, &comment.postID, &comment.body, &comment.createdAt, &comment.updatedAt)
+	err := r.db.QueryRow(ctx,
+		"SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE user_id = $1",
+		commentID).Scan(&comment.userID, &comment.postID, &comment.body, &comment.createdAt, &comment.updatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error User r.db.Query: %w", err)
 	}
@@ -120,4 +122,25 @@ func (r *Repository) CreateComment(ctx context.Context, params CreateCommentRequ
 	}
 
 	return nil
+}
+
+func (r *Repository) CreatePostsComments(ctx context.Context, postID string) ([]Comment, error) {
+
+	rows, err := r.db.Query(ctx, "SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE post_id = $1", postID)
+
+	var comments []Comment
+	for rows.Next() {
+		var comment Comment
+		err = rows.Scan(&comment.userID, &comment.postID, &comment.body, &comment.createdAt, &comment.updatedAt)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return comments, nil
 }
