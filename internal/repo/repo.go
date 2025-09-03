@@ -65,51 +65,33 @@ type CreateCommentRequest struct {
 func (r *Repository) GetUserByID(ctx context.Context, userID int) (*User, error) {
 	var user User
 
-	rows, err := r.db.Query(ctx, "SELECT name, email, is_admin, created_at, updated_at FROM users WHERE user_id = $1", userID)
+	err := r.db.QueryRow(ctx, "SELECT name, email, is_admin, created_at, updated_at FROM users WHERE user_id = $1", userID).Scan(&user.name, &user.email, &user.isAdmin, &user.createdAt, &user.updatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error User r.db.Query: %w", err)
 	}
 
-	for rows.Next() {
-		err := rows.Scan(&user.name, &user.email, &user.isAdmin, &user.createdAt, &user.updatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("error User Scan: %w", err)
-		}
-	}
 	return &user, nil
 }
 
 func (r *Repository) GetPostByID(ctx context.Context, postID int) (*Post, error) {
 	var post Post
 
-	rows, err := r.db.Query(ctx, "SELECT user_id, title, body, views, created_at, updated_at FROM posts WHERE user_id = $1", postID)
+	err := r.db.QueryRow(ctx, "SELECT user_id, title, body, views, created_at, updated_at FROM posts WHERE user_id = $1", postID).Scan(&post.userID, &post.title, &post.body, &post.views, &post.createdAt, &post.updatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error User r.db.Query: %w", err)
 	}
 
-	for rows.Next() {
-		err := rows.Scan(&post.userID, &post.title, &post.body, &post.views, &post.createdAt, &post.updatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("error User Scan: %w", err)
-		}
-	}
 	return &post, nil
 }
 
 func (r *Repository) GetCommentByID(ctx context.Context, commentID int) (*Comment, error) {
 	var comment Comment
 
-	rows, err := r.db.Query(ctx, "SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE user_id = $1", commentID)
+	err := r.db.QueryRow(ctx, "SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE user_id = $1", commentID).Scan(&comment.userID, &comment.postID, &comment.body, &comment.createdAt, &comment.updatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error User r.db.Query: %w", err)
 	}
 
-	for rows.Next() {
-		err := rows.Scan(&comment.userID, &comment.postID, &comment.body, &comment.createdAt, &comment.updatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("error User Scan: %w", err)
-		}
-	}
 	return &comment, nil
 }
 
@@ -123,7 +105,7 @@ func (r *Repository) CreateUser(ctx context.Context, params CreateUserRequest) e
 }
 
 func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) error {
-	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2)", params.userID, params.title, params.body)
+	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2, $3)", params.userID, params.title, params.body)
 	if err != nil {
 		return fmt.Errorf("error CreatePost Exec: %w", err)
 	}
@@ -132,7 +114,7 @@ func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) e
 }
 
 func (r *Repository) CreateComment(ctx context.Context, params CreateCommentRequest) error {
-	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2)", params.userID, params.postID, params.body)
+	_, err := r.db.Exec(ctx, "INSERT INTO comments (user_id, title, body) VALUES ($1, $2, $3)", params.userID, params.postID, params.body)
 	if err != nil {
 		return fmt.Errorf("error CreateComment Exec: %w", err)
 	}
