@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	connString := "postgres://admin:admin@localhost:5433/postgres"
+	connString := "postgres://admin:admin@localhost:5433/blog"
 	conn, err := pgx.Connect(context.Background(), connString)
 	if err != nil {
 		log.Fatal("Ошибка при подключении к БД: ", err)
@@ -26,11 +26,8 @@ func main() {
 	blogService := service.New(blogRepository)
 	blogHandler := handler.New(*blogService)
 
-	r.POST("/create", blogHandler.CreateUser)
+	r.POST("/users", blogHandler.CreateUser)
 	r.GET("/user/:id", blogHandler.GetUser)
-	//r.POST("/shorten/:custom", linksHandler.CreateLink) // можно убрать, если перешёл на JSON-поле "custom"
-	//r.GET("/analytics/:short_url", linksHandler.GetAnalytics)
-	//r.GET("/:path", linksHandler.Redirect)
 
-	r.Run()
+	r.Run(":8088")
 }

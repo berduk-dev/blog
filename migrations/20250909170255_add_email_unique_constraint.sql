@@ -6,5 +6,4 @@ ALTER TABLE users
 
 -- +goose Down
 -- +goose StatementBegin
-SELECT 'down SQL query';
 -- +goose StatementEnd

@@ -53,7 +53,7 @@ type UpdateComment struct {
 func (r *Repository) GetUser(ctx context.Context, userID int) (model.User, error) {
 	var user model.User
 
-	err := r.db.QueryRow(ctx, "SELECT id, name, email, is_admin, created_at, updated_at FROM users WHERE user_id = $1", userID).Scan(&user.UserID, &user.Name, &user.Email, &user.IsAdmin, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRow(ctx, "SELECT id, name, email, is_admin, created_at, updated_at FROM users WHERE id = $1", userID).Scan(&user.UserID, &user.Name, &user.Email, &user.IsAdmin, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return model.User{}, fmt.Errorf("error User r.db.Query: %w", err)
 	}
@@ -64,7 +64,7 @@ func (r *Repository) GetUser(ctx context.Context, userID int) (model.User, error
 func (r *Repository) GetPost(ctx context.Context, postID int) (model.Post, error) {
 	var post model.Post
 
-	err := r.db.QueryRow(ctx, "SELECT user_id, title, body, views, created_at, updated_at FROM posts WHERE user_id = $1", postID).Scan(&post.UserID, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
+	err := r.db.QueryRow(ctx, "SELECT id, title, body, views, created_at, updated_at FROM posts WHERE id = $1", postID).Scan(&post.UserID, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		return model.Post{}, fmt.Errorf("error User r.db.Query: %w", err)
 	}
@@ -76,8 +76,8 @@ func (r *Repository) GetComment(ctx context.Context, commentID int) (model.Comme
 	var comment model.Comment
 
 	err := r.db.QueryRow(ctx,
-		"SELECT user_id, post_id, body, created_at, updated_at FROM posts WHERE user_id = $1",
-		commentID).Scan(&comment.UserID, &comment.PostID, &comment.Body, &comment.CreatedAt, &comment.UpdatedAt)
+		"SELECT id, user_id, post_id, body, created_at, updated_at FROM posts WHERE id = $1",
+		commentID).Scan(&comment.CommentID, &comment.UserID, &comment.PostID, &comment.Body, &comment.CreatedAt, &comment.UpdatedAt)
 	if err != nil {
 		return model.Comment{}, fmt.Errorf("error User r.db.Query: %w", err)
 	}
@@ -87,7 +87,7 @@ func (r *Repository) GetComment(ctx context.Context, commentID int) (model.Comme
 
 func (r *Repository) GetPostComments(ctx context.Context, postID string) ([]model.Comment, error) {
 
-	rows, err := r.db.Query(ctx, "SELECT comment_id, post_id, user_id, body, created_at, updated_at FROM comments WHERE post_id = $1", postID)
+	rows, err := r.db.Query(ctx, "SELECT id, post_id, id, body, created_at, updated_at FROM comments WHERE post_id = $1", postID)
 
 	var comments []model.Comment
 	for rows.Next() {
