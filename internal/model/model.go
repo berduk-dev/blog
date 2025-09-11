@@ -3,7 +3,7 @@ package model
 import "time"
 
 type User struct {
-	UserID    int       `json:"id"`
+	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	IsAdmin   bool      `json:"is_admin"`
@@ -18,20 +18,20 @@ type CreateUserReq struct {
 }
 
 type Post struct {
-	PostID    int
-	UserID    int
-	Title     string
-	Body      string
-	Views     int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int       `json:"id"`
+	UserID    int       `json:"user_id"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body"`
+	Views     int       `json:"views"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Comment struct {
-	CommentID int
-	PostID    int
-	UserID    int
-	Body      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int       `json:"id"`
+	PostID    int       `json:"post_id"`
+	UserID    int       `json:"user_id"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -55,7 +55,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":         user.UserID,
+		"id":         user.ID,
 		"name":       user.Name,
 		"email":      user.Email,
 		"is_admin":   user.IsAdmin,

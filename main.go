@@ -24,7 +24,7 @@ func main() {
 
 	blogRepository := repo.New(conn)
 	blogService := service.New(blogRepository)
-	blogHandler := handler.New(*blogService)
+	blogHandler := handler.New(blogService)
 
 	r.POST("/users", blogHandler.CreateUser)
 	r.GET("/user/:id", blogHandler.GetUser)
