@@ -27,6 +27,11 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type CreatePostReq struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+}
+
 type Comment struct {
 	ID        int       `json:"id"`
 	PostID    int       `json:"post_id"`
@@ -34,4 +39,8 @@ type Comment struct {
 	Body      string    `json:"body"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type CreateCommentReq struct {
+	Body string `json:"body"`
 }

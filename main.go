@@ -26,8 +26,14 @@ func main() {
 	blogService := service.New(blogRepository)
 	blogHandler := handler.New(blogService)
 
-	r.POST("/users", blogHandler.CreateUser)
-	r.GET("/user/:id", blogHandler.GetUser)
+	r.POST("/users/", blogHandler.CreateUser)
+	r.GET("/users/:id/", blogHandler.GetUser)
+	r.GET("/users/:id/posts/", blogHandler.GetPostsByUserID)
+	r.POST("/posts/", blogHandler.CreatePost)
+	r.GET("/posts/", blogHandler.GetPosts)
+	r.GET("/posts/:id/", blogHandler.GetPost)
+	r.POST("/posts/:id/comments/", blogHandler.CreateComment)
+	r.GET("/posts/:id/comments/", blogHandler.GetCommentsByPostID)
 
 	r.Run(":8088")
 }

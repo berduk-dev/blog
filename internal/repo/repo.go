@@ -30,24 +30,24 @@ type UpdateUser struct {
 	IsAdmin *bool
 }
 
-type CreatePostRequest struct {
-	userID int
-	title  string
-	body   string
-}
-
 type UpdatePost struct {
 	Title int
 }
 
+type CreatePostRequest struct {
+	UserID int
+	Title  string
+	Body   string
+}
+
 type CreateCommentRequest struct {
-	postID int
-	userID int
-	body   string
+	PostID int
+	UserID int
+	Body   string
 }
 
 type UpdateComment struct {
-	body string
+	Body string
 }
 
 func (r *Repository) GetUser(ctx context.Context, userID int) (model.User, error) {
@@ -72,7 +72,7 @@ func (r *Repository) GetPost(ctx context.Context, postID int) (model.Post, error
        			views,
        			created_at,
        			updated_at FROM posts WHERE id = $1`, postID,
-	).Scan(&post.ID, &post.UserID, &post.Title, &post.Views, &post.Body, &post.CreatedAt, &post.UpdatedAt)
+	).Scan(&post.ID, &post.UserID, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		return model.Post{}, fmt.Errorf("error GetPost QueryRow: %w", err)
 	}
@@ -93,9 +93,9 @@ func (r *Repository) GetComment(ctx context.Context, commentID int) (model.Comme
 	return comment, nil
 }
 
-func (r *Repository) GetPostComments(ctx context.Context, postID string) ([]model.Comment, error) {
-
+func (r *Repository) GetCommentsByPostID(ctx context.Context, postID int) ([]model.Comment, error) {
 	rows, err := r.db.Query(ctx, "SELECT id, post_id, user_id, body, created_at, updated_at FROM comments WHERE post_id = $1", postID)
+	defer rows.Close()
 
 	var comments []model.Comment
 	for rows.Next() {
@@ -114,14 +114,21 @@ func (r *Repository) GetPostComments(ctx context.Context, postID string) ([]mode
 	return comments, nil
 }
 
-func (r *Repository) GetUserPosts(ctx context.Context, userID string) ([]model.Post, error) {
-
-	rows, err := r.db.Query(ctx, "SELECT post_id, title, body, views, created_at, updated_at FROM posts WHERE post_id = $1", userID)
+func (r *Repository) GetPostsByUserID(ctx context.Context, userID int) ([]model.Post, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, user_id, title, body, views, created_at, updated_at
+		FROM posts WHERE user_id = $1
+		ORDER BY created_at desc`,
+		userID)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
 
 	var posts []model.Post
 	for rows.Next() {
 		var post model.Post
-		err = rows.Scan(&post.ID, &post.Title, &post.Body, post.Views, &post.CreatedAt, &post.UpdatedAt)
+		err = rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -130,6 +137,34 @@ func (r *Repository) GetUserPosts(ctx context.Context, userID string) ([]model.P
 
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+
+	return posts, nil
+}
+
+func (r *Repository) GetPosts(ctx context.Context) ([]model.Post, error) {
+	rows, err := r.db.Query(ctx, `
+        SELECT id, user_id, title, body, views, created_at, updated_at
+        FROM posts
+        ORDER BY created_at DESC
+    `)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []model.Post
+	for rows.Next() {
+		var post model.Post
+		err = rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration failed: %w", err)
 	}
 
 	return posts, nil
@@ -145,7 +180,7 @@ func (r *Repository) CreateUser(ctx context.Context, user CreateUserRequest) err
 }
 
 func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) error {
-	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2, $3)", params.userID, params.title, params.body)
+	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2, $3)", params.UserID, params.Title, params.Body)
 	if err != nil {
 		return fmt.Errorf("error CreatePost Exec: %w", err)
 	}
@@ -154,7 +189,7 @@ func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) e
 }
 
 func (r *Repository) CreateComment(ctx context.Context, params CreateCommentRequest) error {
-	_, err := r.db.Exec(ctx, "INSERT INTO comments (user_id, post_id, body) VALUES ($1, $2, $3)", params.userID, params.postID, params.body)
+	_, err := r.db.Exec(ctx, "INSERT INTO comments (user_id, post_id, body) VALUES ($1, $2, $3)", params.UserID, params.PostID, params.Body)
 	if err != nil {
 		return fmt.Errorf("error CreateComment Exec: %w", err)
 	}
@@ -232,7 +267,7 @@ func (r *Repository) UpdateComment(ctx context.Context, commentID int, comment U
 			  body
 			  created_at          
 			  updated_at`,
-		comment.body,
+		comment.Body,
 		commentID,
 	).Scan(updatedComment.ID, updatedComment.PostID, updatedComment.UserID, updatedComment.Body, updatedComment.CreatedAt, updatedComment.UpdatedAt)
 	if err != nil {
