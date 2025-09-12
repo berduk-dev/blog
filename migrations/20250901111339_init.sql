@@ -14,6 +14,7 @@ create table users (
     id bigserial primary key,
     name text not null,
     email text not null,
+
     is_admin boolean not null default false,
     created_at timestamp not null default now(),
     updated_at timestamp not null default now()
