@@ -3,6 +3,22 @@ package model
 import "time"
 
 type User struct {
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	HashedPassword string
+	IsAdmin        bool      `json:"is_admin"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type CreateUserReq struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
+type LoginResp struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
@@ -11,10 +27,9 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type CreateUserReq struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
+type LoginReq struct {
 	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type Post struct {

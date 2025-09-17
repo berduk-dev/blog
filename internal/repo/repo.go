@@ -2,9 +2,15 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/berduk-dev/blog/internal/model"
+	"github.com/berduk-dev/blog/internal/model/errs"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Repository struct {
@@ -173,6 +179,13 @@ func (r *Repository) GetPosts(ctx context.Context) ([]model.Post, error) {
 func (r *Repository) CreateUser(ctx context.Context, user CreateUserRequest) error {
 	_, err := r.db.Exec(ctx, "INSERT INTO users (name, email, hashed_password, is_admin) VALUES ($1, $2, $3, $4)", user.Name, user.Email, user.HashedPassword, user.IsAdmin)
 	if err != nil {
+		log.Println("repo.CreateUser: ", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
+			if strings.Contains(pgErr.ConstraintName, "email") {
+				return errs.ErrorEmailAlreadyExists
+			}
+		}
 		return fmt.Errorf("error CreateUser Exec: %w", err)
 	}
 
@@ -265,7 +278,7 @@ func (r *Repository) UpdateComment(ctx context.Context, commentID int, comment U
 	  		  post_id,
 			  user_id
 			  body
-			  created_at          
+			  created_at
 			  updated_at`,
 		comment.Body,
 		commentID,
@@ -275,4 +288,35 @@ func (r *Repository) UpdateComment(ctx context.Context, commentID int, comment U
 	}
 
 	return updatedComment, nil
+}
+
+func (r *Repository) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+	var user model.User
+
+	err := r.db.QueryRow(
+		ctx,
+		`SELECT
+				id,
+				name,
+				hashed_password,
+				email,
+				is_admin,
+				created_at,
+				updated_at
+		   FROM users
+		  WHERE email = $1`,
+		email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.HashedPassword,
+		&user.Email,
+		&user.IsAdmin,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return model.User{}, fmt.Errorf("error GetUserByEmail Scan: %w", err)
+	}
+
+	return user, nil
 }

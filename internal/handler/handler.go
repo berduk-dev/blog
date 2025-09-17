@@ -1,12 +1,13 @@
 package handler
 
 import (
-	"github.com/berduk-dev/blog/internal/model"
-	"github.com/berduk-dev/blog/internal/service"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/berduk-dev/blog/internal/model"
+	"github.com/berduk-dev/blog/internal/service"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -19,29 +20,10 @@ func New(service service.Service) Handler {
 	}
 }
 
-func (h *Handler) CreateUser(c *gin.Context) {
-	var req model.CreateUserReq
-
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, "У вас невалидный запрос")
-		log.Println("error ShouldBindJSON:", err)
-		return
-	}
-
-	err = h.service.CreateUser(c, req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, "Произошла ошибка! Попробуйте позже")
-		log.Println("error service.CreateUser:", err)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
 func (h *Handler) CreatePost(c *gin.Context) {
-	var req model.CreatePostReq
+	user := c.Value("user").(model.User)
 
+	var req model.CreatePostReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, "У вас невалидный запрос")
@@ -49,7 +31,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	err = h.service.CreatePost(c, req)
+	err = h.service.CreatePost(c, user.ID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "Произошла ошибка! Попробуйте позже")
 		log.Println("error service.CreatePost:", err)
@@ -60,6 +42,8 @@ func (h *Handler) CreatePost(c *gin.Context) {
 }
 
 func (h *Handler) CreateComment(c *gin.Context) {
+	user := c.Value("user").(model.User)
+
 	var req model.CreateCommentReq
 
 	err := c.ShouldBindJSON(&req)
@@ -76,7 +60,7 @@ func (h *Handler) CreateComment(c *gin.Context) {
 		return
 	}
 
-	err = h.service.CreateComment(c, postID, req)
+	err = h.service.CreateComment(c, user.ID, postID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "Произошла ошибка! Попробуйте позже")
 		log.Println("error service.CreateComment:", err)
@@ -84,24 +68,6 @@ func (h *Handler) CreateComment(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
-}
-
-func (h *Handler) GetUser(c *gin.Context) {
-	userID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, "У вас невалидный запрос")
-		log.Println("error GetUser, strconv.Atoi:", err)
-		return
-	}
-
-	user, err := h.service.GetUser(c, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, "Произошла ошибка! Попробуйте позже")
-		log.Println("error service.GetUser:", err)
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
 }
 
 func (h *Handler) GetPostsByUserID(c *gin.Context) {
