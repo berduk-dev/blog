@@ -20,7 +20,7 @@ import (
 
 func main() {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6380",
+		Addr:     "redis:6379",
 		Password: "",
 		DB:       0,
 	})
@@ -30,7 +30,7 @@ func main() {
 		log.Fatalf("Ошибка подключения к Redis: %v", err)
 	}
 
-	connString := "postgres://postgres:password@localhost:5432/blog"
+	connString := "postgres://postgres:password@postgres:5432/blog"
 	conn, err := pgx.Connect(context.Background(), connString)
 	if err != nil {
 		log.Fatal("Ошибка при подключении к БД: ", err)
@@ -42,7 +42,6 @@ func main() {
 	blogRepository := repo.New(conn)
 	blogService := service.New(blogRepository, sessionsCache)
 	blogHandler := handler.New(blogService)
-
 	blogMiddlewares := middlewares.New(blogService)
 
 	r.Use(cors.New(cors.Config{

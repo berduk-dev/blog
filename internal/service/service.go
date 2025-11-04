@@ -3,32 +3,47 @@ package service
 import (
 	"context"
 	"fmt"
+	handlerDto "github.com/berduk-dev/blog/internal/handler/dto"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/berduk-dev/blog/internal/cache"
 	"github.com/berduk-dev/blog/internal/model"
-	"github.com/berduk-dev/blog/internal/repo"
-	"golang.org/x/crypto/bcrypt"
+	serviceDto "github.com/berduk-dev/blog/internal/service/dto"
 )
 
+type Repository interface {
+	CreatePost(ctx context.Context, params serviceDto.CreatePostRequest) error
+	GetPost(ctx context.Context, postID int) (model.Post, error)
+	GetPosts(ctx context.Context) ([]model.Post, error)
+	GetPostsByUserID(ctx context.Context, userID int) ([]model.Post, error)
+
+	CreateComment(ctx context.Context, params serviceDto.CreateCommentRequest) error
+	GetCommentsByPostID(ctx context.Context, postID int) ([]model.Comment, error)
+
+	CreateUser(ctx context.Context, user serviceDto.CreateUserRequest) error
+	GetUser(ctx context.Context, userID int) (model.User, error)
+	GetUserByEmail(ctx context.Context, email string) (model.User, error)
+}
+
 type Service struct {
-	repo           repo.Repository
+	repo           Repository
 	sessionsManger cache.SessionsCache
 }
 
-func New(repo repo.Repository, sessionsManger cache.SessionsCache) Service {
-	return Service{
+func New(repo Repository, sessionsManger cache.SessionsCache) *Service {
+	return &Service{
 		repo:           repo,
 		sessionsManger: sessionsManger,
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, user model.CreateUserReq) error {
+func (s *Service) CreateUser(ctx context.Context, user handlerDto.CreateUserReq) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("error bcrypt.GenerateFromPassword: %w", err)
 	}
 
-	err = s.repo.CreateUser(ctx, repo.CreateUserRequest{
+	err = s.repo.CreateUser(ctx, serviceDto.CreateUserRequest{
 		Name:           user.Name,
 		HashedPassword: string(hashedPassword),
 		Email:          user.Email,
@@ -40,8 +55,8 @@ func (s *Service) CreateUser(ctx context.Context, user model.CreateUserReq) erro
 	return nil
 }
 
-func (s *Service) CreatePost(ctx context.Context, userID int, post model.CreatePostReq) error {
-	err := s.repo.CreatePost(ctx, repo.CreatePostRequest{
+func (s *Service) CreatePost(ctx context.Context, userID int, post handlerDto.CreatePostReq) error {
+	err := s.repo.CreatePost(ctx, serviceDto.CreatePostRequest{
 		UserID: userID,
 		Title:  post.Title,
 		Body:   post.Body,
@@ -53,8 +68,8 @@ func (s *Service) CreatePost(ctx context.Context, userID int, post model.CreateP
 	return nil
 }
 
-func (s *Service) CreateComment(ctx context.Context, userID int, PostID int, comment model.CreateCommentReq) error {
-	err := s.repo.CreateComment(ctx, repo.CreateCommentRequest{
+func (s *Service) CreateComment(ctx context.Context, userID int, PostID int, comment handlerDto.CreateCommentReq) error {
+	err := s.repo.CreateComment(ctx, serviceDto.CreateCommentRequest{
 		UserID: userID,
 		PostID: PostID,
 		Body:   comment.Body,

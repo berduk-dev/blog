@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	serviceDto "github.com/berduk-dev/blog/internal/service/dto"
 	"log"
 	"strings"
 
@@ -17,17 +18,10 @@ type Repository struct {
 	db *pgx.Conn
 }
 
-func New(db *pgx.Conn) Repository {
-	return Repository{
+func New(db *pgx.Conn) *Repository {
+	return &Repository{
 		db: db,
 	}
-}
-
-type CreateUserRequest struct {
-	Name           string
-	Email          string
-	HashedPassword string
-	IsAdmin        bool
 }
 
 type UpdateUser struct {
@@ -38,18 +32,6 @@ type UpdateUser struct {
 
 type UpdatePost struct {
 	Title int
-}
-
-type CreatePostRequest struct {
-	UserID int
-	Title  string
-	Body   string
-}
-
-type CreateCommentRequest struct {
-	PostID int
-	UserID int
-	Body   string
 }
 
 type UpdateComment struct {
@@ -176,7 +158,7 @@ func (r *Repository) GetPosts(ctx context.Context) ([]model.Post, error) {
 	return posts, nil
 }
 
-func (r *Repository) CreateUser(ctx context.Context, user CreateUserRequest) error {
+func (r *Repository) CreateUser(ctx context.Context, user serviceDto.CreateUserRequest) error {
 	_, err := r.db.Exec(ctx, "INSERT INTO users (name, email, hashed_password, is_admin) VALUES ($1, $2, $3, $4)", user.Name, user.Email, user.HashedPassword, user.IsAdmin)
 	if err != nil {
 		log.Println("repo.CreateUser: ", err)
@@ -192,7 +174,7 @@ func (r *Repository) CreateUser(ctx context.Context, user CreateUserRequest) err
 	return nil
 }
 
-func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) error {
+func (r *Repository) CreatePost(ctx context.Context, params serviceDto.CreatePostRequest) error {
 	_, err := r.db.Exec(ctx, "INSERT INTO posts (user_id, title, body) VALUES ($1, $2, $3)", params.UserID, params.Title, params.Body)
 	if err != nil {
 		return fmt.Errorf("error CreatePost Exec: %w", err)
@@ -201,7 +183,7 @@ func (r *Repository) CreatePost(ctx context.Context, params CreatePostRequest) e
 	return nil
 }
 
-func (r *Repository) CreateComment(ctx context.Context, params CreateCommentRequest) error {
+func (r *Repository) CreateComment(ctx context.Context, params serviceDto.CreateCommentRequest) error {
 	_, err := r.db.Exec(ctx, "INSERT INTO comments (user_id, post_id, body) VALUES ($1, $2, $3)", params.UserID, params.PostID, params.Body)
 	if err != nil {
 		return fmt.Errorf("error CreateComment Exec: %w", err)

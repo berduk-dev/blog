@@ -1,20 +1,31 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
 
+	handlerDto "github.com/berduk-dev/blog/internal/handler/dto"
 	"github.com/berduk-dev/blog/internal/model"
-	"github.com/berduk-dev/blog/internal/service"
+
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
-	service service.Service
+type Service interface {
+	CreatePost(ctx context.Context, userID int, post handlerDto.CreatePostReq) error
+	CreateComment(ctx context.Context, userID int, PostID int, comment handlerDto.CreateCommentReq) error
+	GetPost(ctx context.Context, postID int) (model.Post, error)
+	GetCommentsByPostID(ctx context.Context, postID int) ([]model.Comment, error)
+	GetPostsByUserID(ctx context.Context, userID int) ([]model.Post, error)
+	GetPosts(ctx context.Context) ([]model.Post, error)
 }
 
-func New(service service.Service) Handler {
+type Handler struct {
+	service Service
+}
+
+func New(service Service) Handler {
 	return Handler{
 		service: service,
 	}
@@ -23,7 +34,7 @@ func New(service service.Service) Handler {
 func (h *Handler) CreatePost(c *gin.Context) {
 	user := c.Value("user").(model.User)
 
-	var req model.CreatePostReq
+	var req handlerDto.CreatePostReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, "У вас невалидный запрос")
@@ -44,7 +55,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 func (h *Handler) CreateComment(c *gin.Context) {
 	user := c.Value("user").(model.User)
 
-	var req model.CreateCommentReq
+	var req handlerDto.CreateCommentReq
 
 	err := c.ShouldBindJSON(&req)
 	if err != nil {

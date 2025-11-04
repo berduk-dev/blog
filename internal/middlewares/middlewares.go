@@ -1,18 +1,23 @@
 package middlewares
 
 import (
+	"context"
+	"github.com/berduk-dev/blog/internal/model"
 	"log"
 	"net/http"
 
-	"github.com/berduk-dev/blog/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
+type UserService interface {
+	GetUserIDBySessionID(ctx context.Context, sessionID string) (bool, int, error)
+	GetUser(ctx context.Context, userID int) (model.User, error)
+}
 type Middleware struct {
-	service service.Service
+	service UserService
 }
 
-func New(service service.Service) Middleware {
+func New(service UserService) Middleware {
 	return Middleware{
 		service: service,
 	}
