@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Блог</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #2c3e50;
+        }
+
+        main {
+            padding: 2rem 0;
+        }
+
+        .posts-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .post-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .post-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .post-meta {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-body {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .post-actions {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        #postsHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        #viewToggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .my-post {
+            border-left: 4px solid #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .nav-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">Мой Блог</div>
+            <div class="nav-buttons">
+                <button id="loginBtn" class="btn btn-secondary">Войти</button>
+                <button id="registerBtn" class="btn btn-primary">Регистрация</button>
+                <div id="userInfo" class="hidden">
+                    <span id="userName"></span>
+                    <button id="logoutBtn" class="btn btn-secondary">Выйти</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div id="authSection" class="auth-section hidden">
+            <div class="user-info">
+                <div>
+                    <h3>Добро пожаловать, <span id="userNameDisplay"></span>!</h3>
+                </div>
+                <div>
+                    <button id="createPostBtn" class="btn btn-primary">Создать пост</button>
+                    <button id="myPostsBtn" class="btn btn-secondary">Мои посты</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="postsContainer">
+            <div id="postsHeader">
+                <h1 id="postsTitle">Последние посты</h1>
+                <div id="viewToggle" class="hidden">
+                    <button id="allPostsBtn" class="btn btn-secondary">Все посты</button>
+                    <button id="userPostsBtn" class="btn btn-primary">Мои посты</button>
+                </div>
+            </div>
+            <div id="loadingMessage" class="loading">Загрузка постов...</div>
+            <div id="errorMessage" class="error hidden"></div>
+            <div id="postsGrid" class="posts-grid"></div>
+        </div>
+    </main>
+
+    <!-- Модальное окно входа -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="loginModal">&times;</span>
+            <h2>Вход</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="registerModal">&times;</span>
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Имя:</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email:</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Пароль:</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания поста -->
+    <div id="createPostModal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="createPostModal">&times;</span>
+            <h2>Создать новый пост</h2>
+            <form id="createPostForm">
+                <div class="form-group">
+                    <label for="postTitle">Заголовок:</label>
+                    <input type="text" id="postTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="postBody">Содержание:</label>
+                    <textarea id="postBody" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Создать пост</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8088';
+        let currentUser = null;
+
+        // DOM элементы
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+        const authSection = document.getElementById('authSection');
+        const createPostBtn = document.getElementById('createPostBtn');
+        const myPostsBtn = document.getElementById('myPostsBtn');
+        const allPostsBtn = document.getElementById('allPostsBtn');
+        const userPostsBtn = document.getElementById('userPostsBtn');
+        const postsTitle = document.getElementById('postsTitle');
+        const viewToggle = document.getElementById('viewToggle');
+        const postsGrid = document.getElementById('postsGrid');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Состояние приложения
+        let currentView = 'all'; // 'all' или 'user'
+
+        // Модальные окна
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const createPostModal = document.getElementById('createPostModal');
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPosts();
+            setupEventListeners();
+            checkAuthStatus();
+        });
+
+        function setupEventListeners() {
+            // Кнопки навигации
+            loginBtn.addEventListener('click', () => openModal('loginModal'));
+            registerBtn.addEventListener('click', () => openModal('registerModal'));
+            logoutBtn.addEventListener('click', logout);
+            createPostBtn.addEventListener('click', () => openModal('createPostModal'));
+            myPostsBtn.addEventListener('click', showMyPosts);
+            allPostsBtn.addEventListener('click', showAllPosts);
+            userPostsBtn.addEventListener('click', showMyPosts);
+
+            // Закрытие модальных окон
+            document.querySelectorAll('.close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', (e) => {
+                    closeModal(e.target.dataset.modal);
+                });
+            });
+
+            // Закрытие модального окна при клике вне его
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+
+            // Формы
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            document.getElementById('createPostForm').addEventListener('submit', handleCreatePost);
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/users/me`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    updateUIForLoggedInUser();
+                }
+            } catch (error) {
+                console.log('No active session');
+            }
+        }
+
+        function updateUIForLoggedInUser() {
+            loginBtn.classList.add('hidden');
+            registerBtn.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            authSection.classList.remove('hidden');
+            viewToggle.classList.remove('hidden');
+
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+        }
+
+        function updateUIForLoggedOutUser() {
+            loginBtn.classList.remove('hidden');
+            registerBtn.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+            authSection.classList.add('hidden');
+            viewToggle.classList.add('hidden');
+            currentView = 'all';
+            updateViewButtons();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                if (!email || !password) {
+                    showError('Пожалуйста, заполните все поля');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    currentUser = user;
+                    updateUIForLoggedInUser();
+
+                    closeModal('loginModal');
+                    document.getElementById('loginForm').reset();
+                    showSuccess('Вы успешно вошли в систему!');
+                } else {
+                    showError('Неверный email или пароль');
+                }
+            } catch (error) {
+                showError('Ошибка при входе: ' + error.message);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/register/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (response.ok) {
+                    closeModal('registerModal');
+                    document.getElementById('registerForm').reset();
+                    showSuccess('Регистрация успешна! Теперь войдите в систему.');
+                } else {
+                    const errorText = await response.text();
+                    showError(errorText || 'Ошибка регистрации');
+                }
+            } catch (error) {
+                showError('Ошибка при регистрации: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                // Можно добавить вызов logout endpoint если он будет создан
+                currentUser = null;
+                updateUIForLoggedOutUser();
+                showSuccess('Вы успешно вышли из системы');
+            } catch (error) {
+                showError('Ошибка при выходе: ' + error.message);
+            }
+        }
+
+        async function handleCreatePost(e) {
+            e.preventDefault();
+
+            if (!currentUser) {
+                showError('Необходимо войти в систему');
+                return;
+            }
+
+            const title = document.getElementById('postTitle').value;
+            const body = document.getElementById('postBody').value;
+
+            if (!title.trim() || !body.trim()) {
+                showError('Пожалуйста, заполните все поля');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/posts/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ title, body })
+                });
+
+                if (response.ok) {
+                    closeModal('createPostModal');
+                    document.getElementById('createPostForm').reset();
+
+                    // Обновляем соответствующий вид
+                    if (currentView === 'user') {
+                        loadUserPosts();
+                    } else {
+                        loadPosts();
+                    }
+
+                    showSuccess('Пост создан успешно!');
+                } else {
+                    const errorText = await response.text();
+                    showError(errorText || 'Ошибка при создании поста');
+                }
+            } catch (error) {
+                showError('Ошибка при создании поста: ' + error.message);
+            }
+        }
+
+
+        async function loadPosts() {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE}/posts/`);
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки постов');
+                }
+
+                const posts = await response.json();
+                displayPosts(posts, false);
+            } catch (error) {
+                showError('Ошибка при загрузке постов: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadUserPosts() {
+            if (!currentUser) {
+                showError('Необходимо войти в систему');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE}/users/${currentUser.id}/posts/`);
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки ваших постов');
+                }
+
+                const posts = await response.json();
+                displayPosts(posts, true);
+            } catch (error) {
+                showError('Ошибка при загрузке ваших постов: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showMyPosts() {
+            currentView = 'user';
+            updateViewButtons();
+            postsTitle.textContent = 'Мои посты';
+            loadUserPosts();
+        }
+
+        function showAllPosts() {
+            currentView = 'all';
+            updateViewButtons();
+            postsTitle.textContent = 'Последние посты';
+            loadPosts();
+        }
+
+        function updateViewButtons() {
+            if (currentView === 'all') {
+                allPostsBtn.classList.add('btn-primary');
+                allPostsBtn.classList.remove('btn-secondary');
+                userPostsBtn.classList.remove('btn-primary');
+                userPostsBtn.classList.add('btn-secondary');
+            } else {
+                userPostsBtn.classList.add('btn-primary');
+                userPostsBtn.classList.remove('btn-secondary');
+                allPostsBtn.classList.remove('btn-primary');
+                allPostsBtn.classList.add('btn-secondary');
+            }
+        }
+
+        function displayPosts(posts, isUserPosts = false) {
+            postsGrid.innerHTML = '';
+
+            if (!posts || posts.length === 0) {
+                const message = isUserPosts ? 'У вас пока нет постов' : 'Постов пока нет';
+                postsGrid.innerHTML = `<div class="loading">${message}</div>`;
+                return;
+            }
+
+            posts.forEach(post => {
+                const postElement = createPostElement(post, isUserPosts);
+                postsGrid.appendChild(postElement);
+            });
+        }
+
+        function createPostElement(post, isUserPost = false) {
+            const postDiv = document.createElement('div');
+            postDiv.className = isUserPost ? 'post-card my-post' : 'post-card';
+
+            const createdAt = new Date(post.created_at).toLocaleDateString('ru-RU');
+            const authorText = isUserPost ? 'Вы' : `Пользователь ${post.user_id}`;
+
+            postDiv.innerHTML = `
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-meta">
+                    Автор: ${authorText} | ${createdAt} | Просмотров: ${post.views}
+                </div>
+                <div class="post-body">${escapeHtml(post.body)}</div>
+                <div class="post-actions">
+                    <button class="btn btn-secondary" onclick="viewPost(${post.id})">Читать полностью</button>
+                </div>
+            `;
+
+            return postDiv;
+        }
+
+        async function viewPost(postId) {
+            try {
+                const response = await fetch(`${API_BASE}/posts/${postId}/`);
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки поста');
+                }
+
+                const post = await response.json();
+                // В реальном приложении здесь бы открывалась отдельная страница поста
+                alert(`Заголовок: ${post.title}\n\nСодержание: ${post.body}`);
+            } catch (error) {
+                showError('Ошибка при загрузке поста: ' + error.message);
+            }
+        }
+
+        function showLoading() {
+            loadingMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loadingMessage.classList.add('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            hideLoading();
+        }
+
+        function showSuccess(message) {
+            // Простая реализация уведомления об успехе
+            alert(message);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
